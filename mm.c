@@ -69,7 +69,9 @@ int mm_init(void);
 void *mm_malloc(size_t size);
 void mm_free(void *bp);
 void *mm_realloc(void *ptr, size_t size);
-void mm_heapcheck(int verbos);
+void my_heapcheck();
+void myprintblock(char *bp);
+void mycheckblock(char *bp);
 
 /* functions that I can use
    void *mem_sbrk(int incr)
@@ -89,10 +91,29 @@ int realloc_count=1;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void mm_heapcheck(int verbos) {
-	printf("lo %p\n", mem_heap_lo());
-	printf("hi %p\n", mem_heap_hi());
-	printf("%s\n", __func__);
+void my_heapcheck() 
+{
+	char *bp;
+	for (bp = heap_listp; bp && GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
+		printf("bp = %p\n", bp);
+		myprintblock(bp);
+		mycheckblock(bp);
+	}	
+}
+void myprintblock(char *bp) 
+{
+	/*
+	char c = GET_ALLOC(HDRP(bp)) ? 'a' : 'f';
+	int n =  GET_ALLOC(HDRP(bp)) ? 1 : 0;
+	int size = GET_SIZE(HDRP(bp));
+	printf("%c: header: [%d:%c,%d,%d] footer: [%d:%c]\n", 
+			c, size+DSIZE, c, n, size, size+DSIZE, c);
+			*/
+
+}
+void mycheckblock(char *bp)
+{
+	return 0;
 }
 
 static void *find_fit(size_t asize)
@@ -132,7 +153,7 @@ static void place(void *bp, size_t asize)
  */
 int mm_init(void)
 {
-//	mm_heapcheck(1);
+	my_heapcheck();
 	heap_listp = NULL; //initialize heap_listp
 	/* Create the initial empty heap */
 	if((heap_listp = mem_sbrk(4*WSIZE))==(void*)-1)
