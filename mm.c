@@ -59,15 +59,25 @@
 
 
 /* My define functions start */
-static void *extend_heap(size_t words)
+static void *extend_heap(size_t words);
+static void *coalesce(void *bp);
 /* My define functions end */
 
+/* functions that I can use
+   void *mem_sbrk(int incr)
+   void *mem_heap_lo(void)
+   void *mem_heap_hi(void)
+   size_t mem_heapsize(void)
+   size_t mem_pagesize(void)
+ */
 
 /* 
  * mm_init - initialize the malloc package.
  */
 int mm_init(void)
 {
+	char *heap_listp; //beginning of the heap
+
 	/* Create the initial empty heap */
 	if((heap_listp = mem_sbrk(4*WSIZE))==(void*)-1)
 		return -1;
@@ -87,7 +97,7 @@ static void *extend_heap(size_t words) {
 	char *bp;
 	size_t size;
 	/* Allocate an even number of words to maintain alignment */
-	size = (word % 2 ) > (word + 1) * WSIZE : words * WSIZE;
+	size = (words % 2 ) ? (words + 1) * WSIZE : words * WSIZE;
 	if((long)(bp = mem_sbrk(size)) == -1)
 		return NULL;
 
@@ -153,6 +163,11 @@ void *mm_malloc(size_t size)
  */
 void mm_free(void *ptr)
 {
+	size_t size = GET_SIZE(HDRP(bp));
+
+	PUT(HDRP(bp), PACK(size, 0));
+	PUT(FTRP(bp), PACK(size, 0));
+	coalesce(bp);
 }
 
 /*
