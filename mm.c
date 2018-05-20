@@ -46,6 +46,7 @@
 // Read the size and allocation bit from address p 
 #define GET_SIZE(p)  (GET(p) & ~0x7)
 #define GET_ALLOC(p) (GET(p) & 0x1)
+#define GET_ALLOC_C(p) (GET_ALLOC(p)) ? ('a') : ('f')
 
 // Address of block's header and footer 
 #define HDRP(bp) ((char *)(bp) - WSIZE)
@@ -95,20 +96,23 @@ void my_heapcheck()
 {
 	char *bp;
 	for (bp = heap_listp; bp && GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
-		printf("bp = %p\n", bp);
 		myprintblock(bp);
 		mycheckblock(bp);
 	}	
 }
 void myprintblock(char *bp) 
 {
-	/*
-	char c = GET_ALLOC(HDRP(bp)) ? 'a' : 'f';
 	int n =  GET_ALLOC(HDRP(bp)) ? 1 : 0;
-	int size = GET_SIZE(HDRP(bp));
-	printf("%c: header: [%d:%c,%d,%d] footer: [%d:%c]\n", 
-			c, size+DSIZE, c, n, size, size+DSIZE, c);
-			*/
+	//todo: replace n into selected block index
+	if(n==1)
+		printf("%c: header: [%d:%c,%d,%d] footer: [%d:%c]\n", 
+				GET_ALLOC_C(HDRP(bp)), GET_SIZE(HDRP(bp)), GET_ALLOC_C(HDRP(bp)), n, GET_SIZE(HDRP(bp))-DSIZE, GET_SIZE(FTRP(bp)), GET_ALLOC_C(FTRP(bp)));
+	if(n==0)
+		printf("%c: header: [%d:%c] footer: [%d:%c]\n", 
+				GET_ALLOC_C(HDRP(bp)), GET_SIZE(HDRP(bp)), GET_ALLOC_C(HDRP(bp)),  GET_SIZE(FTRP(bp)), GET_ALLOC_C(FTRP(bp)));
+	// a: header: [2056:a,1,2040] footer: [2056:a]
+	// block size:2056, request_id :1, payload size: 2040
+
 
 }
 void mycheckblock(char *bp)
@@ -153,7 +157,6 @@ static void place(void *bp, size_t asize)
  */
 int mm_init(void)
 {
-	my_heapcheck();
 	heap_listp = NULL; //initialize heap_listp
 	/* Create the initial empty heap */
 	if((heap_listp = mem_sbrk(4*WSIZE))==(void*)-1)
@@ -164,9 +167,15 @@ int mm_init(void)
 	PUT(heap_listp + (3*WSIZE), PACK(0, 1));
 	heap_listp += (2*WSIZE);
 	
+	//printf("before extend\n");
+//	my_heapcheck();
+
 	/* Extend the empty heap with a free block of CHUNKSIZE bytes */
 	if (extend_heap(CHUNKSIZE/WSIZE) == NULL)
 		return -1;
+
+	//printf("after extend\n");
+//	my_heapcheck();
 	return 0;
 }
 
@@ -175,6 +184,7 @@ static void *extend_heap(size_t words) {
 	size_t size;
 	/* Allocate an even number of words to maintain alignment */
 	size = (words % 2 ) ? (words + 1) * WSIZE : words * WSIZE;
+	//printf("extend size = %d \n", size);
 	if((long)(bp = mem_sbrk(size)) == -1)
 		return NULL;
 
@@ -226,6 +236,7 @@ static void *coalesce(void *bp)
 void *mm_malloc(size_t size)
 {
 
+	//printf("malloc called : %d\n", size);
 	/*
 	int newsize = ALIGN(size + SIZE_T_SIZE);
 	void *p = mem_sbrk(newsize);
@@ -252,14 +263,20 @@ void *mm_malloc(size_t size)
 	/* Search th free list for a fit */
 	if ((bp = find_fit(asize)) != NULL) {
 		place(bp, asize);
+		//printf("after malloc(%d)\n", size);
+		//my_heapcheck();
 		return bp;
 	}
 	/* No fit found. Get more memory and place the block */
 	extendsize = MAX(asize, CHUNKSIZE);
 	if(( bp=extend_heap(extendsize/WSIZE)) ==NULL){
+		//printf("after malloc(%d)\n", size);
+		//my_heapcheck();
 		return NULL;
 	}
 	place(bp, asize);
+		//printf("after malloc(%d)\n", size);
+		//my_heapcheck();
 	return bp;
 }
 
