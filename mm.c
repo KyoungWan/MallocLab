@@ -105,11 +105,11 @@ void myprintblock(char *bp)
 	int n =  GET_ALLOC(HDRP(bp)) ? 1 : 0;
 	//todo: replace n into selected block index
 	if(n==1)
-		printf("%c: header: [%d:%c,%d,%d] footer: [%d:%c]\n", 
-				GET_ALLOC_C(HDRP(bp)), GET_SIZE(HDRP(bp)), GET_ALLOC_C(HDRP(bp)), n, GET_SIZE(HDRP(bp))-DSIZE, GET_SIZE(FTRP(bp)), GET_ALLOC_C(FTRP(bp)));
+		printf("%c: header(%p): [%d:%c,%d,%d] footer(%p): [%d:%c]\n", 
+				GET_ALLOC_C(HDRP(bp)), HDRP(bp), GET_SIZE(HDRP(bp)), GET_ALLOC_C(HDRP(bp)), n, GET_SIZE(HDRP(bp))-DSIZE, FTRP(bp), GET_SIZE(FTRP(bp)), GET_ALLOC_C(FTRP(bp)));
 	if(n==0)
-		printf("%c: header: [%d:%c] footer: [%d:%c]\n", 
-				GET_ALLOC_C(HDRP(bp)), GET_SIZE(HDRP(bp)), GET_ALLOC_C(HDRP(bp)),  GET_SIZE(FTRP(bp)), GET_ALLOC_C(FTRP(bp)));
+		printf("%c: header(%p): [%d:%c] footer(%p): [%d:%c]\n", 
+				GET_ALLOC_C(HDRP(bp)), bp, GET_SIZE(HDRP(bp)), GET_ALLOC_C(HDRP(bp)), FTRP(bp), GET_SIZE(FTRP(bp)), GET_ALLOC_C(FTRP(bp)));
 	// a: header: [2056:a,1,2040] footer: [2056:a]
 	// block size:2056, request_id :1, payload size: 2040
 
@@ -167,24 +167,23 @@ int mm_init(void)
 	PUT(heap_listp + (3*WSIZE), PACK(0, 1));
 	heap_listp += (2*WSIZE);
 	
-	//printf("before extend\n");
-//	my_heapcheck();
+	printf("before extend\n");
+	my_heapcheck();
 
 	/* Extend the empty heap with a free block of CHUNKSIZE bytes */
 	if (extend_heap(CHUNKSIZE/WSIZE) == NULL)
 		return -1;
 
-	//printf("after extend\n");
-//	my_heapcheck();
+	printf("after extend\n");
+	my_heapcheck();
 	return 0;
 }
 
-static void *extend_heap(size_t words) {
+static void *extend_heap(size_t words) { // make large free block
 	char *bp;
 	size_t size;
 	/* Allocate an even number of words to maintain alignment */
 	size = (words % 2 ) ? (words + 1) * WSIZE : words * WSIZE;
-	//printf("extend size = %d \n", size);
 	if((long)(bp = mem_sbrk(size)) == -1)
 		return NULL;
 
@@ -236,16 +235,6 @@ static void *coalesce(void *bp)
 void *mm_malloc(size_t size)
 {
 
-	//printf("malloc called : %d\n", size);
-	/*
-	int newsize = ALIGN(size + SIZE_T_SIZE);
-	void *p = mem_sbrk(newsize);
-	if (p == (void *)-1)
-		return NULL;
-	else {
-		*(size_t *)p = size;
-		return (void *)((char *)p + SIZE_T_SIZE);
-	}*/
 	size_t asize; /* Adjusted block size */
 	size_t extendsize; /* Amount to extend heap if no fit */
 	char *bp;
@@ -263,20 +252,20 @@ void *mm_malloc(size_t size)
 	/* Search th free list for a fit */
 	if ((bp = find_fit(asize)) != NULL) {
 		place(bp, asize);
-		//printf("after malloc(%d)\n", size);
-		//my_heapcheck();
+		printf("after malloc(%d)\n", size);
+		my_heapcheck();
 		return bp;
 	}
 	/* No fit found. Get more memory and place the block */
 	extendsize = MAX(asize, CHUNKSIZE);
 	if(( bp=extend_heap(extendsize/WSIZE)) ==NULL){
-		//printf("after malloc(%d)\n", size);
-		//my_heapcheck();
+		printf("after malloc(%d)\n", size);
+		my_heapcheck();
 		return NULL;
 	}
 	place(bp, asize);
-		//printf("after malloc(%d)\n", size);
-		//my_heapcheck();
+		printf("after malloc(%d)\n", size);
+		my_heapcheck();
 	return bp;
 }
 
@@ -289,6 +278,8 @@ void mm_free(void *bp)
 	PUT(HDRP(bp), PACK(size, 0));
 	PUT(FTRP(bp), PACK(size, 0));
 	coalesce(bp);
+	printf("after free(%p)\n", bp);
+		my_heapcheck();
 }
 
 /*
