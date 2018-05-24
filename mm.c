@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <unistd.h>
 #include <string.h>
 // for using (uint_ptr_t) type
 #include <stdint.h>
@@ -66,7 +65,6 @@
 
 // Store predecessor or successor pointer for free blocks 
 #define SET_PTR(p1, p2) (*(unsigned int *)(p1) = (unsigned int)(p2))
-#define SET_PTR2(p1, p2) (*(uintptr_t *)(p1) = (uintptr_t)(p2))
 
 
 
@@ -138,8 +136,8 @@ void insert_node(char *bp, size_t size){ //insert into the first position
 		return;
 	}
 	segregated_lists[asize_idx] = bp;
-	SET_PTR2(PREV_PTR(bp), p);
-	SET_PTR2(NEXT_PTR(bp), NEXT_PTR(p));
+	SET_PTR(PREV_PTR(bp), p);
+	SET_PTR(NEXT_PTR(bp), NEXT_PTR(p));
 }
 
 void print_lists() {
