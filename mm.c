@@ -130,19 +130,49 @@ void init_segregated_lists() {
 		segregated_lists[i] = NULL;
 	}
 }
+void delete_node(void *bp) {
+  printf("delete_node\n");
+  size_t size = GET_SIZE(HDRP(bp));
+  int asize_idx = align_idx(size);
+
+  if(PREV(bp) != NULL) {
+    if(NEXT(bp) != NULL) {
+  printf("delete test1\n");
+      SET_PTR(NEXT_PTR(PREV(bp)), NEXT(bp));
+      SET_PTR(PREV_PTR(NEXT(bp)), PREV(bp));
+    }else {
+  printf("delete test2\n");
+      SET_PTR(NEXT_PTR(PREV(bp)), NULL);
+    }
+  }else {
+    if(NEXT(bp) != NULL) {
+  printf("delete test3\n");
+      SET_PTR(PREV_PTR(NEXT(bp)), NULL);
+      segregated_lists[asize_idx]= NEXT(bp);
+    }else {
+  printf("delete test4\n");
+      segregated_lists[asize_idx]= NULL;
+    }
+  }
+  return;
+}
+
 void insert_node(void *bp, size_t size){ //insert into the first position
-  printf("test0\n");
+  printf("insert_node\n");
 	int asize_idx = align_idx(size);
 	void *front= segregated_lists[asize_idx];
   void *back=NULL;
   //find suitable free block in lists
-  printf("test0\n");
-  while(front != NULL && GET_SIZE(HDRP(front)) < size){
-    back = front;
-    front = NEXT(front);
+
+  if(front != NULL) {
+      SET_PTR(NEXT_PTR(bp), front);
+      SET_PTR(PREV_PTR(front), bp);
+      segregated_lists[asize_idx] = bp;
+  }else {
+      SET_PTR(NEXT_PTR(bp), NULL);
+      segregated_lists[asize_idx] = bp;
   }
-  printf("test1\n");
-   // Set predecessor and successor 
+  /*
   if (front != NULL) {
     if (back != NULL) {
   printf("test2\n");
@@ -170,6 +200,7 @@ void insert_node(void *bp, size_t size){ //insert into the first position
       segregated_lists[asize_idx] = bp;
     }
   }
+  */
 }
 
 void print_lists() {
@@ -223,31 +254,45 @@ void mycheckblock(void *bp)
 
 static void *find_fit(size_t asize)
 {
-	/*First fit search */
-	void *bp;
-
-	for (bp=heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
-		if(!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
-			return bp;
-		}
-	}
-	return NULL; /* No fit */
+  //print_lists();
+  printf("find fit\n");
+  int asize_idx = align_idx(asize);
+  printf("asize_idx = %d\n", asize_idx);
+  void *ptr;
+  while(asize_idx < LIST) {
+    ptr = segregated_lists[asize_idx];
+      printf("asize_idx= %d\n", asize_idx);
+      printf("ptr= %p\n", ptr);
+    asize_idx++;
+    while( ptr != NULL && GET_SIZE(HDRP(ptr)) < asize){
+      printf("size = %d\n", GET_SIZE(HDRP(ptr)));
+      ptr = NEXT(ptr);
+    }
+    if(ptr != NULL){
+      printf("found ptr = %p\n", ptr);
+      return ptr;
+    }
+  }
+  printf("not found\n");
+  return NULL; /* No fit */
 }
 
 static void place(void *bp, size_t asize)
 {
-	size_t csize = GET_SIZE(HDRP(bp));
+  size_t csize = GET_SIZE(HDRP(bp));
+  delete_node(bp);
 
-	if((csize-asize) >= (2*DSIZE)) {
-		PUT(HDRP(bp), PACK(asize, 1));
-		PUT(FTRP(bp), PACK(asize, 1));
-		bp = NEXT_BLKP(bp);
-		PUT(HDRP(bp), PACK(csize-asize, 0));
-		PUT(FTRP(bp), PACK(csize-asize, 0));
-	}
-	else {
-		PUT(HDRP(bp), PACK(csize, 1));
-		PUT(FTRP(bp), PACK(csize, 1));
+  if((csize-asize) >= (2*DSIZE)) {
+    PUT(HDRP(bp), PACK(asize, 1));
+    PUT(FTRP(bp), PACK(asize, 1));
+    bp = NEXT_BLKP(bp);
+    PUT(HDRP(bp), PACK(csize-asize, 0));
+    PUT(FTRP(bp), PACK(csize-asize, 0));
+    insert_node(bp, csize-asize);
+  }
+  else {
+    PUT(HDRP(bp), PACK(csize, 1));
+    PUT(FTRP(bp), PACK(csize, 1));
 	}
 }
 
@@ -283,6 +328,7 @@ int mm_init(void)
 }
 
 static void *extend_heap(size_t words) { // make large free block
+  printf("extend_heap\n");
 	void *bp;
 	size_t size;
 	/* Allocate an even number of words to maintain alignment */
@@ -302,33 +348,48 @@ static void *extend_heap(size_t words) { // make large free block
 
 static void *coalesce(void *bp)
 {
-	size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
-	size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
-	size_t size = GET_SIZE(HDRP(bp));
+  printf("coalesce\n");
+  printf("bp = %p\n", bp);
+  size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
+  size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
+  size_t size = GET_SIZE(HDRP(bp));
 
-	if(prev_alloc && next_alloc) { // Case 1
-		return bp;
-	}
-	else if (prev_alloc && !next_alloc) { // Case 2
-		size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
-		PUT(HDRP(bp), PACK(size, 0));
-		PUT(FTRP(bp), PACK(size, 0));
-	}
+  if(prev_alloc && next_alloc) { // Case 1
+  printf("coal test1\n");
+    return bp;
+  }
+  else if (prev_alloc && !next_alloc) { // Case 2
+  printf("coal test2\n");
+    delete_node(bp);
+    delete_node(NEXT_BLKP(bp));
+    size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
+    PUT(HDRP(bp), PACK(size, 0));
+    PUT(FTRP(bp), PACK(size, 0));
+  }
+  else if (!prev_alloc && next_alloc) { // Case 3
+  printf("coal test3\n");
+    delete_node(bp);
+    delete_node(PREV_BLKP(bp));
+    size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+    PUT(FTRP(bp), PACK(size, 0));
+    PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
+    bp = PREV_BLKP(bp);
+  }
+  else { // Case 4
+  printf("coal test4\n");
+    delete_node(bp);
+    delete_node(PREV_BLKP(bp));
+    delete_node(NEXT_BLKP(bp));
+    size += GET_SIZE(HDRP(PREV_BLKP(bp))) +
+      GET_SIZE(FTRP(NEXT_BLKP(bp)));
+    PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
+    PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
+    bp = PREV_BLKP(bp);
+  }
+  printf("coal test0\n");
+  insert_node(bp, size);
 
-	else if (!prev_alloc && next_alloc) { // Case 3
-		size += GET_SIZE(HDRP(PREV_BLKP(bp)));
-		PUT(FTRP(bp), PACK(size, 0));
-		PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-		bp = PREV_BLKP(bp);
-	}
-	else { // Case 4
-		size += GET_SIZE(HDRP(PREV_BLKP(bp))) +
-			GET_SIZE(FTRP(NEXT_BLKP(bp)));
-		PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-		PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
-		bp = PREV_BLKP(bp);
-	}
-	return bp;
+  return bp;
 }
 
 
@@ -338,6 +399,7 @@ static void *coalesce(void *bp)
  */
 void *mm_malloc(size_t size)
 {
+    printf("before malloc(%d)\n", size);
 
 	size_t asize; /* Adjusted block size */
 	size_t extendsize; /* Amount to extend heap if no fit */
@@ -382,9 +444,9 @@ void mm_free(void *bp)
   PUT(HDRP(bp), PACK(size, 0));
   PUT(FTRP(bp), PACK(size, 0));
 
-	coalesce(bp);
-    printf("after free(%p)\n", bp);
-		my_heapcheck();
+  coalesce(bp);
+  printf("after free(%p)\n", bp);
+  my_heapcheck();
 }
 
 /*
