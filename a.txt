@@ -1,0 +1,163 @@
+before extend
+a: header(0x7f5f96ad1014): [8:a,1,0] footer(0x7f5f96ad1018): [8:a]
+extend_heap
+bp =  0x7f5f96ad1020
+============================================
+/////lists[0]/////
+tttt(nil)
+/////finished/////
+/////lists[1]/////
+tttt(nil)
+/////finished/////
+/////lists[2]/////
+tttt(nil)
+/////finished/////
+/////lists[3]/////
+tttt(nil)
+/////finished/////
+/////lists[4]/////
+tttt(nil)
+/////finished/////
+/////lists[5]/////
+tttt(nil)
+/////finished/////
+/////lists[6]/////
+tttt(nil)
+/////finished/////
+/////lists[7]/////
+tttt(nil)
+/////finished/////
+/////lists[8]/////
+tttt(nil)
+/////finished/////
+/////lists[9]/////
+tttt(nil)
+/////finished/////
+/////lists[10]/////
+tttt(nil)
+/////finished/////
+/////lists[11]/////
+tttt(nil)
+/////finished/////
+/////lists[12]/////
+tttt0x7f5f96ad1020
+(node ptr = 0x7f5f96ad1020 node size = 0x1000) ->
+test= (nil) ->
+/////finished/////
+/////lists[13]/////
+tttt(nil)
+/////finished/////
+/////lists[14]/////
+tttt(nil)
+/////finished/////
+/////lists[15]/////
+tttt(nil)
+/////finished/////
+/////lists[16]/////
+tttt(nil)
+/////finished/////
+/////lists[17]/////
+tttt(nil)
+/////finished/////
+/////lists[18]/////
+tttt(nil)
+/////finished/////
+/////lists[19]/////
+tttt(nil)
+/////finished/////
+============================================
+after extend
+a: header(0x7f5f96ad1014): [8:a,1,0] footer(0x7f5f96ad1018): [8:a]
+f: header(0x7f5f96ad1020): [4096:f] footer(0x7f5f96ad2018): [4096:f]
+after malloc(2040)
+a: header(0x7f5f96ad1014): [8:a,1,0] footer(0x7f5f96ad1018): [8:a]
+a: header(0x7f5f96ad101c): [2048:a,1,2040] footer(0x7f5f96ad1818): [2048:a]
+f: header(0x7f5f96ad1820): [2048:f] footer(0x7f5f96ad2018): [2048:f]
+after malloc(2040)
+a: header(0x7f5f96ad1014): [8:a,1,0] footer(0x7f5f96ad1018): [8:a]
+a: header(0x7f5f96ad101c): [2048:a,1,2040] footer(0x7f5f96ad1818): [2048:a]
+a: header(0x7f5f96ad181c): [2048:a,1,2040] footer(0x7f5f96ad2018): [2048:a]
+after free(0x7f5f96ad1820)
+a: header(0x7f5f96ad1014): [8:a,1,0] footer(0x7f5f96ad1018): [8:a]
+a: header(0x7f5f96ad101c): [2048:a,1,2040] footer(0x7f5f96ad1818): [2048:a]
+f: header(0x7f5f96ad1820): [2048:f] footer(0x7f5f96ad2018): [2048:f]
+after malloc(48)
+a: header(0x7f5f96ad1014): [8:a,1,0] footer(0x7f5f96ad1018): [8:a]
+a: header(0x7f5f96ad101c): [2048:a,1,2040] footer(0x7f5f96ad1818): [2048:a]
+a: header(0x7f5f96ad181c): [56:a,1,48] footer(0x7f5f96ad1850): [56:a]
+f: header(0x7f5f96ad1858): [1992:f] footer(0x7f5f96ad2018): [1992:f]
+extend_heap
+bp =  0x7f5f96ad2020
+============================================
+/////lists[0]/////
+tttt(nil)
+/////finished/////
+/////lists[1]/////
+tttt(nil)
+/////finished/////
+/////lists[2]/////
+tttt(nil)
+/////finished/////
+/////lists[3]/////
+tttt(nil)
+/////finished/////
+/////lists[4]/////
+tttt(nil)
+/////finished/////
+/////lists[5]/////
+tttt(nil)
+/////finished/////
+/////lists[6]/////
+tttt(nil)
+/////finished/////
+/////lists[7]/////
+tttt(nil)
+/////finished/////
+/////lists[8]/////
+tttt(nil)
+/////finished/////
+/////lists[9]/////
+tttt(nil)
+/////finished/////
+/////lists[10]/////
+tttt(nil)
+/////finished/////
+/////lists[11]/////
+tttt(nil)
+/////finished/////
+/////lists[12]/////
+tttt0x7f5f96ad2020
+(node ptr = 0x7f5f96ad2020 node size = 0x1000) ->
+test= (nil) ->
+/////finished/////
+/////lists[13]/////
+tttt(nil)
+/////finished/////
+/////lists[14]/////
+tttt(nil)
+/////finished/////
+/////lists[15]/////
+tttt(nil)
+/////finished/////
+/////lists[16]/////
+tttt(nil)
+/////finished/////
+/////lists[17]/////
+tttt(nil)
+/////finished/////
+/////lists[18]/////
+tttt(nil)
+/////finished/////
+/////lists[19]/////
+tttt(nil)
+/////finished/////
+============================================
+after malloc(4072)
+a: header(0x7f5f96ad1014): [8:a,1,0] footer(0x7f5f96ad1018): [8:a]
+a: header(0x7f5f96ad101c): [2048:a,1,2040] footer(0x7f5f96ad1818): [2048:a]
+a: header(0x7f5f96ad181c): [56:a,1,48] footer(0x7f5f96ad1850): [56:a]
+a: header(0x7f5f96ad1854): [4080:a,1,4072] footer(0x7f5f96ad2840): [4080:a]
+f: header(0x7f5f96ad2848): [2008:f] footer(0x7f5f96ad3018): [2008:f]
+after free(0x7f5f96ad1858)
+a: header(0x7f5f96ad1014): [8:a,1,0] footer(0x7f5f96ad1018): [8:a]
+a: header(0x7f5f96ad101c): [2048:a,1,2040] footer(0x7f
