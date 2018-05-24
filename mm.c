@@ -69,6 +69,8 @@
 
 // Store predecessor or successor pointer for free blocks
 #define SET_PTR(p1, p2) (*(unsigned int *)(p1) = (unsigned int)(p2))
+//여기서 unsigned int값만큼만 바꾸기때문에 64bit 전체를 못바꾸는것같다..
+//PREV, NEXT를 이용해서 덮어씌우는걸 생각해보는중이다.
 
 
 
@@ -158,19 +160,26 @@ void delete_node(void *bp) {
 }
 
 void insert_node(void *bp, size_t size){ //insert into the first position
-  printf("insert_node\n");
+  printf("insert_node %p\n", bp);
 	int asize_idx = align_idx(size);
+  printf("asize_idx = %d\n", asize_idx);
 	void *front= segregated_lists[asize_idx];
   void *back=NULL;
   //find suitable free block in lists
-
   if(front != NULL) {
+  printf("insert test1\n");
       SET_PTR(NEXT_PTR(bp), front);
       SET_PTR(PREV_PTR(front), bp);
+      SET_PTR(PREV_PTR(bp), NULL);
       segregated_lists[asize_idx] = bp;
   }else {
+  printf("insert test2\n");
       SET_PTR(NEXT_PTR(bp), NULL);
+      NEXT(bp) = NULL;
+      SET_PTR(PREV_PTR(bp), NULL);
+      PREV(bp) = NULL;
       segregated_lists[asize_idx] = bp;
+      printf("bp = %p\n", bp);
   }
   /*
   if (front != NULL) {
@@ -216,7 +225,9 @@ void print_nodes(void *node, int idx) {
   int cnt=0;
   printf("node[%d]", idx);
   printf("node %p", node);
+  printf("print_nodes\n");
   for(temp = node; temp != NULL; temp = NEXT(temp)) {
+    printf("test\n");
     printf("[%d]size:%d -> \t\t", cnt++, GET_SIZE(HDRP(temp)));
     printf("NEXT(temp): %p", NEXT(temp));
 	}
@@ -440,10 +451,13 @@ void *mm_malloc(size_t size)
  */
 void mm_free(void *bp)
 {
+  printf("before free(%p)\n", bp);
   size_t size = GET_SIZE(HDRP(bp));
   PUT(HDRP(bp), PACK(size, 0));
   PUT(FTRP(bp), PACK(size, 0));
 
+  insert_node(bp, size);
+  print_lists();
   coalesce(bp);
   printf("after free(%p)\n", bp);
   my_heapcheck();
