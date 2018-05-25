@@ -66,9 +66,11 @@
 // Value of free block's prev and next pointer
 #define PREV(ptr) (*(char **)(ptr))
 #define NEXT(ptr) (*(char **)(NEXT_PTR(ptr)))
+//#define NEXT(ptr) (*(char **)((ptr)+(WSIZE)))
 
 // Store predecessor or successor pointer for free blocks
-#define SET_PTR(p1, p2) (*(unsigned int *)(p1) = (unsigned int)(p2))
+//#define SET_PTR(p1, p2) (*(unsigned int *)(p1) = (unsigned int)(p2))
+#define SET_PTR(p1, p2) (*(long long*)(p1) = (long long)(p2))
 //여기서 unsigned int값만큼만 바꾸기때문에 64bit 전체를 못바꾸는것같다..
 //PREV, NEXT를 이용해서 덮어씌우는걸 생각해보는중이다.
 
@@ -106,6 +108,7 @@ int align_idx(size_t size);
 void print_lists();
 void print_nodes(void *node, int idx);
 void init_segregated_lists();
+void show();
 
 
 int malloc_count=1;
@@ -140,16 +143,20 @@ void delete_node(void *bp) {
   if(PREV(bp) != NULL) {
     if(NEXT(bp) != NULL) {
   printf("delete test1\n");
-      SET_PTR(NEXT_PTR(PREV(bp)), NEXT(bp));
-      SET_PTR(PREV_PTR(NEXT(bp)), PREV(bp));
+      //SET_PTR(NEXT_PTR(PREV(bp)), NEXT(bp));
+      NEXT(PREV(bp)) = NEXT(bp);
+      //SET_PTR(PREV_PTR(NEXT(bp)), PREV(bp));
+      PREV(NEXT(bp)) = PREV(bp);
     }else {
   printf("delete test2\n");
-      SET_PTR(NEXT_PTR(PREV(bp)), NULL);
+      //SET_PTR(NEXT_PTR(PREV(bp)), NULL);
+      NEXT(PREV(bp))=NULL;
     }
   }else {
     if(NEXT(bp) != NULL) {
   printf("delete test3\n");
-      SET_PTR(PREV_PTR(NEXT(bp)), NULL);
+     // SET_PTR(PREV_PTR(NEXT(bp)), NULL);
+      PREV(NEXT(bp))=NULL;
       segregated_lists[asize_idx]= NEXT(bp);
     }else {
   printf("delete test4\n");
@@ -159,28 +166,43 @@ void delete_node(void *bp) {
   return;
 }
 
+void show() {
+  printf("temp function\n");
+  printf("origin: %p\n", segregated_lists[11]);
+  printf("next : %p\n", NEXT(segregated_lists[11]));
+}
 void insert_node(void *bp, size_t size){ //insert into the first position
   printf("insert_node %p\n", bp);
 	int asize_idx = align_idx(size);
-  printf("asize_idx = %d\n", asize_idx);
 	void *front= segregated_lists[asize_idx];
   void *back=NULL;
   //find suitable free block in lists
   if(front != NULL) {
-  printf("insert test1\n");
-      SET_PTR(NEXT_PTR(bp), front);
-      SET_PTR(PREV_PTR(front), bp);
-      SET_PTR(PREV_PTR(bp), NULL);
+    printf("itest1\n");
+     //SET_PTR(NEXT_PTR(bp), front);
+      NEXT(bp) = front;
+      printf("front = %p\n",front);
+      printf("NEXT(bp)= %p\n",NEXT(bp));
+      //SET_PTR(PREV_PTR(front), bp);
+      PREV(front) = bp;
+      printf("bp= %p\n",bp);
+      printf("PREV(front)= %p\n",PREV(front));
+     // SET_PTR(PREV_PTR(bp), NULL);
+      PREV(bp) = NULL;
+      printf("PREV(bp)= %p\n",PREV(bp));
       segregated_lists[asize_idx] = bp;
+      printf("seg[asize_idx]= %p\n",segregated_lists[asize_idx]);
+      printf("asize_idx = %d\n", asize_idx);
   }else {
-  printf("insert test2\n");
-      SET_PTR(NEXT_PTR(bp), NULL);
+    printf("itest2\n");
       NEXT(bp) = NULL;
-      SET_PTR(PREV_PTR(bp), NULL);
+     // SET_PTR(NEXT_PTR(bp), NULL);
+     // SET_PTR(PREV_PTR(bp), NULL);
       PREV(bp) = NULL;
       segregated_lists[asize_idx] = bp;
-      printf("bp = %p\n", bp);
   }
+  printf("printlists in insert_node\n");
+  print_lists();
   /*
   if (front != NULL) {
     if (back != NULL) {
@@ -215,22 +237,31 @@ void insert_node(void *bp, size_t size){ //insert into the first position
 void print_lists() {
     printf("//////////////print lists start//////////////\n");
   for(int i=0; i<LIST; i++) {
-    print_nodes(segregated_lists[i], i);
+    printf("seg_lists[%d] = %p", i,segregated_lists[i]);
+   print_nodes(segregated_lists[i], i);
   }
+
     printf("//////////////print lists end//////////////\n");
 }
 
 void print_nodes(void *node, int idx) {
+  printf("print_nodes idx = %d", idx);
   void *temp;
   int cnt=0;
-  printf("node[%d]", idx);
-  printf("node %p", node);
-  printf("print_nodes\n");
+  if(node!=NULL)
+  printf("node[%d][%p]  ", idx, node);
+  else
+  printf("node[%d][Null] ", idx);
+  
+  if(node!=NULL)
   for(temp = node; temp != NULL; temp = NEXT(temp)) {
-    printf("test\n");
-    printf("[%d]size:%d -> \t\t", cnt++, GET_SIZE(HDRP(temp)));
-    printf("NEXT(temp): %p", NEXT(temp));
+    //printf("////[%d]size:%d ->", cnt++, GET_SIZE(HDRP(temp)));
+   printf("ptr: %p////\t", temp);
+   if(temp && NEXT(temp)){
+   printf("NEXT ptr: %p////\t", NEXT(temp));
+   }
 	}
+  printf("print_nodes end");
   printf("\n");
 }
 
@@ -254,7 +285,7 @@ void myprintblock(void *bp)
     printf("%c: header(%p): [%d:%c] footer(%p): [%d:%c]\n",
         GET_ALLOC_C(HDRP(bp)), bp, GET_SIZE(HDRP(bp)), GET_ALLOC_C(HDRP(bp)), FTRP(bp), GET_SIZE(FTRP(bp)), GET_ALLOC_C(FTRP(bp)));
 	// a: header: [2056:a,1,2040] footer: [2056:a]
-	// block size:2056, request_id :1, payload size: 2040
+  // block size:2056, request_id :1, payload size: 2040
 
 
 }
@@ -268,15 +299,11 @@ static void *find_fit(size_t asize)
   //print_lists();
   printf("find fit\n");
   int asize_idx = align_idx(asize);
-  printf("asize_idx = %d\n", asize_idx);
   void *ptr;
   while(asize_idx < LIST) {
     ptr = segregated_lists[asize_idx];
-      printf("asize_idx= %d\n", asize_idx);
-      printf("ptr= %p\n", ptr);
     asize_idx++;
     while( ptr != NULL && GET_SIZE(HDRP(ptr)) < asize){
-      printf("size = %d\n", GET_SIZE(HDRP(ptr)));
       ptr = NEXT(ptr);
     }
     if(ptr != NULL){
@@ -359,7 +386,7 @@ static void *extend_heap(size_t words) { // make large free block
 
 static void *coalesce(void *bp)
 {
-  printf("coalesce\n");
+  printf("coalesce : ");
   printf("bp = %p\n", bp);
   size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
   size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
@@ -451,13 +478,14 @@ void *mm_malloc(size_t size)
  */
 void mm_free(void *bp)
 {
-  printf("before free(%p)\n", bp);
+  printf("before free(%p) freeSize:(%d)\n", bp, GET_SIZE(HDRP(bp)));
   size_t size = GET_SIZE(HDRP(bp));
   PUT(HDRP(bp), PACK(size, 0));
   PUT(FTRP(bp), PACK(size, 0));
 
+  printf("after mm_free coalesce\n");
   insert_node(bp, size);
-  print_lists();
+  //insert_nodeㅇ이후로 망가짐.
   coalesce(bp);
   printf("after free(%p)\n", bp);
   my_heapcheck();
